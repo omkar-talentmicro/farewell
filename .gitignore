@@ -1,0 +1,5 @@
+# audio clips are not published (the page synthesises its own ambience)
+song/
+node_modules/
+.DS_Store
+Thumbs.db

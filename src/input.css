@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .eyebrow { @apply text-xs uppercase tracking-[.22em] text-accent; }
+  .pill { @apply inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition-colors duration-300; }
+
+  /* Lucide icon defaults; size/colour come from utilities */
+  .icon { @apply fill-none stroke-current; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+}
