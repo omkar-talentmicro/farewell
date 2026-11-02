@@ -275,7 +275,7 @@ const PEOPLE = [
   { team: 'Leadership', name: 'Shweta Mam', title: 'The Guiding Force', message: `Dear Shweta Mam, your constant smile, positive energy, and ability to suggest better ways of approaching things make every interaction meaningful. Our conversations have always felt like opportunities to learn something new and think about career growth from a different perspective. Thank you for your valuable guidance and encouragement!` },
   { team: 'Leadership', name: 'Janardhana Hosur Sir', title: 'The Visionary Architect', message: `Dear Janardhana Sir, your vision as a system architect, forward-thinking mindset, and ability to motivate people to look beyond the obvious are truly inspiring. Your advice and perspectives have given me valuable insights into technology, problem-solving, and professional growth. Thank you for building not just systems, but also inspiring people to think bigger!` }
 ];
-/* hierarchy: top band of the sky, chip order, phone grouping and Prev/Next all follow this */
+/* hierarchy: row order of the index and the Prev/Next sequence both follow this */
 const TEAMS = ['Leadership', 'Frontend', 'Backend', 'DevOps', 'Delivery', 'International', 'Seniors & Mentors', 'Support'];
 PEOPLE.sort((a, b) => TEAMS.indexOf(a.team) - TEAMS.indexOf(b.team));   // stable: keeps the order within a team
 
