@@ -27,6 +27,12 @@
   .rule { transform: scaleX(0); transform-origin: left; transition: transform 1.2s cubic-bezier(.2,.7,.2,1) var(--d, 0ms) }
   .rule.in { transform: none }
   #sig-line { transition: stroke-dashoffset 1.1s cubic-bezier(.4,0,.2,1) }
+  .rail { scrollbar-width: none; -ms-overflow-style: none }
+  .rail::-webkit-scrollbar { display: none }
+  .card { transform-style: preserve-3d; transition: transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .5s }
+  .card:hover { box-shadow: 0 30px 60px -30px rgb(var(--c-ink) / .35) }
+  .card .glow { background: radial-gradient(60% 60% at 100% 0%, rgb(var(--tint) / .28), transparent 70%); transition: opacity .5s }
+  .card:hover .glow { opacity: 1 }
 
   @media (prefers-reduced-motion: reduce) {
     .rv, .rv-stagger > *, .w > span, .rule { opacity: 1 !important; transform: none !important; transition: none !important }
@@ -103,7 +109,8 @@
       </div>
       <p id="people-sub" class="rv max-w-md text-muted leading-relaxed" style="--d:240ms"></p>
     </div>
-    <div id="index" class="mt-14 border-t border-ink/15"></div>
+    <nav id="team-nav" class="rv sticky top-14 z-30 -mx-5 sm:-mx-8 px-5 sm:px-8 py-3 mt-12 flex gap-2 overflow-x-auto rail bg-paper/85 backdrop-blur-sm" style="--d:200ms" aria-label="Teams"></nav>
+    <div id="rails" class="mt-6"></div>
     <div class="rv mt-10 flex flex-wrap items-center gap-4" style="--d:200ms">
       <button id="read-all" class="pill border-ink/15 hover:border-ink">Read the notes one by one <svg class="icon w-4 h-4"><use href="#i-arrow-right"/></svg></button>
       <span id="people-count" class="text-sm text-muted"></span>
@@ -276,7 +283,7 @@ const PEOPLE = [
   { team: 'Leadership', name: 'Janardhana Hosur Sir', title: 'The Visionary Architect', message: `Dear Janardhana Sir, your vision as a system architect, forward-thinking mindset, and ability to motivate people to look beyond the obvious are truly inspiring. Your advice and perspectives have given me valuable insights into technology, problem-solving, and professional growth. Thank you for building not just systems, but also inspiring people to think bigger!` }
 ];
 /* hierarchy: row order of the index and the Prev/Next sequence both follow this */
-const TEAMS = ['Leadership', 'Frontend', 'Backend', 'DevOps', 'Delivery', 'International', 'Seniors & Mentors', 'Support'];
+const TEAMS = ['Leadership', 'Seniors & Mentors', 'Frontend', 'Backend', 'DevOps', 'Delivery', 'International', 'Support'];
 PEOPLE.sort((a, b) => TEAMS.indexOf(a.team) - TEAMS.indexOf(b.team));   // stable: keeps the order within a team
 
 /* filled in by build.mjs */
@@ -424,25 +431,78 @@ function typeTerminal() {
   })();
 }
 
-/* ---------- the people: an index, one row per team, names set large; hover shows the nickname ---------- */
-$('index').innerHTML = TEAMS.map((t, ti) => {
+/* ---------- the people: one rail per team, tall cards you scroll sideways; each card leads with the nickname ---------- */
+const TINTS = ['201 106 69', '122 140 112', '110 126 156', '176 120 84'];      // terracotta, sage, dusty blue, clay - cycled per team
+const firstLines = (t, n = 150) => { const s = t.replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, s.lastIndexOf(' ', n)) + '…' : s; };
+
+$('rails').innerHTML = TEAMS.map((t, ti) => {
   const members = PEOPLE.map((p, i) => ({ p, i })).filter(x => x.p.team === t);
+  const tint = TINTS[ti % TINTS.length];
   return `
-  <div class="rv group/row grid grid-cols-1 sm:grid-cols-12 gap-x-8 gap-y-3 py-8 sm:py-10 border-b border-ink/15" style="--d:${Math.min(ti, 4) * 80}ms">
-    <div class="sm:col-span-3 flex sm:flex-col justify-between sm:justify-start gap-2">
-      <p class="text-[11px] uppercase tracking-[.22em] text-accent">${esc(t)}</p>
-      <p class="text-[11px] uppercase tracking-[.22em] text-muted">${members.length} ${members.length === 1 ? 'note' : 'notes'}</p>
+  <section id="team-${ti}" class="team py-10 sm:py-14 border-t border-ink/15" data-ti="${ti}">
+    <div class="rv flex items-end justify-between gap-6">
+      <div class="flex items-baseline gap-4 sm:gap-6">
+        <span class="font-serif text-5xl sm:text-7xl text-ink/15 tabular-nums leading-none">${String(ti + 1).padStart(2, '0')}</span>
+        <div>
+          <h3 class="font-serif text-3xl sm:text-5xl leading-none">${esc(t)}</h3>
+          <p class="mt-2 text-[11px] uppercase tracking-[.22em] text-muted">${members.length} ${members.length === 1 ? 'note' : 'notes'}</p>
+        </div>
+      </div>
+      <div class="hidden sm:flex gap-2">
+        <button class="rail-btn w-11 h-11 rounded-full border border-ink/15 grid place-items-center hover:border-ink transition-colors" data-dir="-1" aria-label="Scroll left"><svg class="icon w-4 h-4"><use href="#i-arrow-left"/></svg></button>
+        <button class="rail-btn w-11 h-11 rounded-full border border-ink/15 grid place-items-center hover:border-ink transition-colors" data-dir="1" aria-label="Scroll right"><svg class="icon w-4 h-4"><use href="#i-arrow-right"/></svg></button>
+      </div>
     </div>
-    <div class="sm:col-span-9 font-serif text-2xl sm:text-[2.6rem] leading-[1.25] sm:leading-[1.3] -mt-1">
-      ${members.map(({ p, i }) => `<button data-i="${i}" class="group/n relative inline-block text-left mr-[.45em] mb-1 align-baseline transition-colors duration-300 group-hover/row:text-ink/30 hover:!text-accent focus-visible:!text-accent focus:outline-none">
-          <span class="absolute left-0 -top-4 whitespace-nowrap font-sans text-[10px] uppercase tracking-[.18em] text-accent opacity-0 translate-y-1 transition-all duration-300 group-hover/n:opacity-100 group-hover/n:translate-y-0 group-focus-visible/n:opacity-100">${esc(p.title || '')}</span>
-          <span class="underline decoration-1 decoration-transparent underline-offset-8 transition-colors duration-300 group-hover/n:decoration-accent">${esc(p.name)}</span><span class="text-ink/30 group-hover/n:text-ink/30">,</span>
-        </button>`).join('')}
+    <div class="rail rv-stagger mt-8 flex gap-4 sm:gap-5 overflow-x-auto snap-x snap-mandatory -mx-5 sm:-mx-8 px-5 sm:px-8 pb-4 [perspective:1200px]">
+      ${members.map(({ p, i }, k) => `
+      <button data-i="${i}" style="--i:${k};--tint:${tint}" class="card group snap-start shrink-0 w-[76vw] sm:w-[320px] min-h-[380px] sm:min-h-[420px] rounded-3xl border border-ink/10 bg-paper text-left p-6 sm:p-7 relative overflow-hidden flex flex-col focus:outline-none focus-visible:border-ink">
+        <span class="glow absolute inset-0 opacity-70 pointer-events-none"></span>
+        <span class="relative flex items-center justify-between">
+          <span class="w-12 h-12 rounded-full overflow-hidden grid place-items-center font-serif text-lg bg-ink text-paper">${PHOTOS[slug(p.name)] ? `<img src="${PHOTOS[slug(p.name)]}" alt="" class="w-full h-full object-cover" />` : esc(initials(p.name))}</span>
+          <span class="text-[10px] uppercase tracking-[.2em] text-muted">${esc(t)}</span>
+        </span>
+        <span class="relative block mt-10 font-serif text-[1.9rem] sm:text-4xl leading-[1.05] tracking-tight">${esc(p.title || p.name)}</span>
+        <span class="relative block mt-3 text-sm text-muted">${esc(p.name)}</span>
+        <span class="relative block mt-6 text-[15px] leading-relaxed text-ink/70">${esc(firstLines(p.message))}</span>
+        <span class="relative mt-auto pt-8 inline-flex items-center gap-2 text-sm font-medium" style="color:rgb(var(--tint))">Read the note <svg class="icon w-4 h-4 transition-transform duration-300 group-hover:translate-x-1"><use href="#i-arrow-right"/></svg></span>
+      </button>`).join('')}
     </div>
-  </div>`;
+  </section>`;
 }).join('');
-$('index').addEventListener('click', (e) => { const b = e.target.closest('button[data-i]'); if (b) openNote(+b.dataset.i); });
-document.querySelectorAll('#index .rv').forEach(el => io.observe(el));
+
+/* sticky team nav: jumps to a team, highlights the one in view */
+$('team-nav').innerHTML = TEAMS.map((t, ti) => `<a href="#team-${ti}" data-ti="${ti}" class="pill border-ink/15 hover:border-ink whitespace-nowrap shrink-0">${esc(t)}</a>`).join('');
+$('team-nav').addEventListener('click', (e) => {
+  const a = e.target.closest('a'); if (!a) return;
+  e.preventDefault();
+  const top = $(a.getAttribute('href').slice(1)).getBoundingClientRect().top + scrollY - 72;
+  scrollTo({ top, behavior: reduced ? 'auto' : 'smooth' });
+});
+const teamSpy = new IntersectionObserver((es) => es.forEach(e => {
+  if (!e.isIntersecting) return;
+  document.querySelectorAll('#team-nav a').forEach(a => {
+    const on = a.dataset.ti === e.target.dataset.ti;
+    a.classList.toggle('bg-ink', on); a.classList.toggle('text-paper', on); a.classList.toggle('border-ink', on);
+  });
+}), { rootMargin: '-40% 0px -55% 0px' });
+document.querySelectorAll('.team').forEach(el => teamSpy.observe(el));
+
+/* rails: open, arrows, tilt */
+$('rails').addEventListener('click', (e) => {
+  const card = e.target.closest('button[data-i]'); if (card) return openNote(+card.dataset.i);
+  const btn = e.target.closest('.rail-btn'); if (!btn) return;
+  const rail = btn.closest('.team').querySelector('.rail');
+  rail.scrollBy({ left: +btn.dataset.dir * (rail.firstElementChild.offsetWidth + 20), behavior: reduced ? 'auto' : 'smooth' });
+});
+if (matchMedia('(hover: hover)').matches && !reduced) {
+  $('rails').addEventListener('pointermove', (e) => {
+    const card = e.target.closest('.card'); if (!card) return;
+    const r = card.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
+    card.style.transform = `translateY(-6px) rotateX(${(-y * 6).toFixed(2)}deg) rotateY(${(x * 8).toFixed(2)}deg)`;
+  });
+  $('rails').addEventListener('pointerout', (e) => { const card = e.target.closest('.card'); if (card && !card.contains(e.relatedTarget)) card.style.transform = ''; });
+}
+document.querySelectorAll('#rails .rv, #rails .rv-stagger').forEach(el => io.observe(el));
 
 /* ---------- note drawer ---------- */
 let cur = 0, lastFocus = null, drawerOpen = false, everOpened = false;
