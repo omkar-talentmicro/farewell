@@ -1,4 +1,5 @@
-# audio clips are not published (the page synthesises its own ambience)
+# scratch audio clips are not published; the background track lives in music/sadness-and-sorrow.mp3
+# (if that file is absent the page falls back to its own synthesised piano)
 song/
 node_modules/
 .DS_Store

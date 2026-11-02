@@ -67,9 +67,10 @@
       <i class="block w-[2px] h-full bg-current origin-bottom scale-y-[.25] group-[.playing]:animate-eq" style="animation-delay:-.3s"></i>
       <i class="block w-[2px] h-full bg-current origin-bottom scale-y-[.25] group-[.playing]:animate-eq" style="animation-delay:-.6s"></i>
     </span>
-    <span id="music-label">Ambience</span>
+    <span id="music-label">Music</span>
   </button>
 </header>
+<audio id="bgm" src="music/sadness-and-sorrow.mp3" loop preload="auto" hidden></audio>
 
 <main>
 
@@ -251,7 +252,7 @@ const SENDER = {
 const PEOPLE = [
   // Frontend
   { team: 'Frontend', name: 'Shashikant', title: 'The Rajasthan Connection', message: `Shashikant, it was a pleasure working alongside you! Your dedication and contribution as a frontend developer have made a difference to the team. Keep growing, keep building, and never stop chasing bigger opportunities.` },
-  { team: 'Frontend', name: 'Harish', title: 'The Growth Story', message: `Harish, from joining as an intern to becoming an experienced developer, your growth is something to be proud of. Keep that learning attitude alive, trust your skills, and continue reaching new heights.` },
+  { team: 'Frontend', name: 'Harish', title: 'The Experienced Intern', message: `Harish, from joining as an intern to becoming an experienced developer, your growth is something to be proud of. Keep that learning attitude alive, trust your skills, and continue reaching new heights.` },
   { team: 'Frontend', name: 'Nilesh', title: 'The Rising Star', message: `Nilesh, every journey begins with a learning phase, and yours is just getting started. Keep experimenting, keep improving, and turn every challenge into an opportunity. All the best for the journey ahead!` },
   { team: 'Frontend', name: 'Tejaswini', title: 'The Mentor', message: `Tejaswini, thank you for being such a wonderful senior and mentor throughout my frontend journey. Your guidance, support, and experience have taught me more than just technology. Truly grateful for everything!` },
   { team: 'Frontend', name: 'Tasmin', title: 'The Fresh Perspective', message: `Tasmin, though our journey of working together has just begun, I'm glad we got the opportunity to connect. Keep bringing your experience, fresh perspectives, and energy to the team. Wishing you great success!` },
@@ -710,9 +711,26 @@ addEventListener('resize', () => { clearTimeout(rsz); rsz = setTimeout(() => { i
   }, 1400);
 })();
 
-/* ---------- ambience: a slow, warm pad synthesised with Web Audio (no audio files) ---------- */
+/* ---------- music: plays music/sadness-and-sorrow.mp3 (drop the piano track there, next to index.html);
+   if that file is missing, falls back to a slow, sad piano synthesised with Web Audio ---------- */
+const bgm = $('bgm'), BGM_VOL = .55;
+let useFile = true, fadeTimer = 0;
 let actx = null, bus = null, musicOn = false, mTimer = 0, mNext = 0, mStep = 0;
-const CHORDS = [[48,55,60,64,67],[45,52,57,60,64],[41,48,53,57,60],[43,50,55,59,62]];
+bgm.addEventListener('error', () => {
+  useFile = false;
+  if (musicOn) { musicOn = false; setMusic(true); }        // switch the running music over to the synth
+});
+function fadeBgm(to, done) {
+  clearInterval(fadeTimer);
+  fadeTimer = setInterval(() => {
+    const v = bgm.volume + (to > bgm.volume ? .03 : -.05);
+    if ((to > bgm.volume && v >= to) || (to <= bgm.volume && v <= to)) { bgm.volume = to; clearInterval(fadeTimer); if (done) done(); }
+    else bgm.volume = Math.min(1, Math.max(0, v));
+  }, 60);
+}
+/* Am - F - Dm - E, a minor-key piano progression: bass note, then a rolling arpeggio with a high note on top */
+const CHORDS = [[45,57,60,64],[41,57,60,65],[38,57,62,65],[40,56,59,64]];
+const ARP = [1, 2, 3, 2, 1, 2, 3, 2];
 const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
 function audio() {
   if (!actx) {
@@ -725,32 +743,47 @@ function audio() {
   if (actx.state === 'suspended') actx.resume();
   return actx;
 }
-function note(freq, when, len, vol, type) {
-  const o = actx.createOscillator(), g = actx.createGain();
-  o.type = type; o.frequency.value = freq;
-  g.gain.setValueAtTime(.0001, when);
-  g.gain.exponentialRampToValueAtTime(vol, when + .4);
-  g.gain.exponentialRampToValueAtTime(.0001, when + len);
-  o.connect(g); g.connect(bus); o.start(when); o.stop(when + len + .1);
+/* a piano-like key: quick strike, long natural decay, a quiet octave partial for brightness */
+function key(freq, when, len, vol) {
+  [[1, 'triangle', vol], [2, 'sine', vol * .25]].forEach(([mul, type, v]) => {
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.value = freq * mul;
+    g.gain.setValueAtTime(.0001, when);
+    g.gain.exponentialRampToValueAtTime(v, when + .012);
+    g.gain.exponentialRampToValueAtTime(.0001, when + len);
+    o.connect(g); g.connect(bus); o.start(when); o.stop(when + len + .1);
+  });
 }
 function schedule() {
   while (mNext < actx.currentTime + .6) {
-    const chord = CHORDS[Math.floor(mStep / 8) % CHORDS.length];
-    if (mStep % 8 === 0) { note(mtof(chord[0] - 12), mNext, 6, .16, 'sine'); chord.slice(1).forEach(m => note(mtof(m), mNext, 6, .035, 'triangle')); }
-    if (mStep % 2 === 1) note(mtof(chord[1 + Math.floor(Math.random() * 4)] + 12), mNext, 2.4, .05, 'sine');
-    mNext += .75; mStep++;
+    const chord = CHORDS[Math.floor(mStep / 8) % CHORDS.length], beat = mStep % 8;
+    if (beat === 0) { key(mtof(chord[0]), mNext, 5, .16); key(mtof(chord[0] - 12), mNext, 5, .08); }
+    key(mtof(chord[ARP[beat]]), mNext, 2.6, .07);
+    if (beat === 0 || beat === 5) key(mtof(chord[1 + Math.floor(Math.random() * 3)] + 12), mNext + .02, 3, .06);
+    mNext += .62; mStep++;
   }
 }
 function setMusic(on) {
   musicOn = on;
   $('music').classList.toggle('playing', on);
   $('music').setAttribute('aria-pressed', String(on));
-  $('music-label').textContent = on ? 'Ambience on' : 'Ambience';
+  $('music-label').textContent = on ? 'Music on' : 'Music';
+  if (useFile) {
+    if (on) { bgm.volume = 0; bgm.play().then(() => fadeBgm(BGM_VOL)).catch(() => {}); }
+    else fadeBgm(0, () => bgm.pause());
+    return;
+  }
   if (on) { audio(); bus.gain.setTargetAtTime(.5, actx.currentTime, .8); mNext = actx.currentTime + .1; schedule(); mTimer = setInterval(schedule, 200); }
   else { clearInterval(mTimer); if (bus) bus.gain.setTargetAtTime(0, actx.currentTime, .4); }
 }
+const isPlaying = () => (useFile ? !bgm.paused : !!actx && actx.state === 'running');
 $('music').onclick = () => { armed = false; setMusic(!musicOn); };
-document.addEventListener('visibilitychange', () => { if (document.hidden && musicOn) setMusic(false); });
+/* pause while the tab is hidden, pick up again when the visitor comes back */
+let resumeOnShow = false;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && musicOn) { resumeOnShow = true; setMusic(false); }
+  else if (!document.hidden && resumeOnShow) { resumeOnShow = false; setMusic(true); }
+});
 
 /* autoplay: browsers only allow sound after the visitor interacts, so we try at once and otherwise
    start on their very first tap, click or key press anywhere on the page */
@@ -763,10 +796,10 @@ function startOnGesture() {
   if (reduced) return;
   setMusic(true);
   setTimeout(() => {
-    if (actx && actx.state === 'running') return;        // allowed (e.g. the visitor has been here before)
+    if (isPlaying()) return;                             // allowed (e.g. the visitor has been here before)
     setMusic(false);
     armed = true;
-    $('music-label').textContent = 'Tap anywhere for ambience';
+    $('music-label').textContent = 'Tap anywhere for music';
     ['pointerdown', 'keydown', 'touchend'].forEach(ev => addEventListener(ev, startOnGesture, { once: true, passive: true }));
   }, 400);
 })();
