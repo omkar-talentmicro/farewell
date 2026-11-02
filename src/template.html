@@ -103,16 +103,8 @@
       </div>
       <p id="people-sub" class="rv max-w-md text-muted leading-relaxed" style="--d:240ms"></p>
     </div>
-    <div id="teams" class="rv mt-10 flex flex-wrap gap-2" style="--d:300ms"></div>
-    <div id="sky" class="rv relative mt-6 rounded-3xl bg-ink text-paper overflow-hidden" style="--d:360ms">
-      <canvas id="sky-cv" class="absolute inset-0 w-full h-full"></canvas>
-      <div id="nodes" class="relative"></div>
-      <div id="sky-hint" class="absolute left-5 bottom-5 flex items-center gap-3 text-sm text-paper/75 transition-opacity duration-700 pointer-events-none">
-        <span class="relative flex h-2.5 w-2.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent"></span></span>
-        <span id="sky-hint-text"></span>
-      </div>
-    </div>
-    <div class="rv mt-6 flex flex-wrap items-center gap-4" style="--d:400ms">
+    <div id="index" class="mt-14 border-t border-ink/15"></div>
+    <div class="rv mt-10 flex flex-wrap items-center gap-4" style="--d:200ms">
       <button id="read-all" class="pill border-ink/15 hover:border-ink">Read the notes one by one <svg class="icon w-4 h-4"><use href="#i-arrow-right"/></svg></button>
       <span id="people-count" class="text-sm text-muted"></span>
     </div>
@@ -357,7 +349,6 @@ const io = new IntersectionObserver((es) => es.forEach(e => {
   e.target.classList.add('in'); io.unobserve(e.target);
   if (e.target.id === 'stats') countUp();
   if (e.target.id === 'term') typeTerminal();
-  if (e.target.id === 'sky') skyRunning = true;
 }), { threshold: .18 });
 document.querySelectorAll('.rv, .rv-stagger, .rule').forEach(el => io.observe(el));
 /* signature */
@@ -433,123 +424,29 @@ function typeTerminal() {
   })();
 }
 
-/* ---------- the people: a constellation on wide screens, a list on narrow ones ---------- */
-const sky = $('sky'), nodesHost = $('nodes'), cv = $('sky-cv'), ctx = cv.getContext('2d');
-let skyRunning = false, wide = false, nodes = [], hovered = -1, stars = [];
-const rnd = (seed) => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
-
-function buildNodes() {
-  wide = matchMedia('(min-width: 640px)').matches;
-  nodesHost.innerHTML = '';
-  if (wide) {
-    sky.className = 'rv in relative mt-6 rounded-3xl bg-ink text-paper overflow-hidden h-[78vh] min-h-[600px]';
-    nodesHost.className = 'relative';
-    cv.style.display = '';
-    // teams sit in their own band of the sky, so the filter chips light up a region rather than scattered dots
-    const r = rnd(7), order = TEAMS.flatMap(t => PEOPLE.map((p, i) => p.team === t ? i : -1).filter(i => i >= 0));
-    const cols = Math.ceil(Math.sqrt(PEOPLE.length * 1.9)), rows = Math.ceil(PEOPLE.length / cols);
-    nodes = PEOPLE.map(() => null);
-    order.forEach((pi, k) => {
-      const p = PEOPLE[pi], c = k % cols, row = Math.floor(k / cols);
-      const x = ((c + .5) / cols + (r() - .5) * .5 / cols) * 100, y = ((row + .5) / rows + (r() - .5) * .5 / rows) * 100;
-      const b = document.createElement('button');
-      b.className = 'node group absolute left-0 top-0 will-change-transform cursor-pointer focus:outline-none transition-opacity duration-500';
-      b.dataset.team = p.team;
-      b.innerHTML = `<span class="block w-2.5 h-2.5 rounded-full bg-paper/80 group-hover:bg-accent group-focus-visible:bg-accent group-hover:scale-150 transition-all duration-300"></span>
-        <span class="absolute left-1/2 -translate-x-1/2 top-4 whitespace-nowrap font-serif italic text-sm text-paper/70 group-hover:text-paper transition-colors duration-300">${esc(p.name)}</span>
-        <span class="absolute left-1/2 -translate-x-1/2 top-[2.4rem] whitespace-nowrap text-[10px] uppercase tracking-[.16em] text-accent opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-300">${esc(p.title || 'Open note')}</span>`;
-      const i = pi;
-      b.setAttribute('aria-label', `Open the note for ${p.name}`);
-      b.addEventListener('mouseenter', () => hovered = i); b.addEventListener('mouseleave', () => hovered = -1);
-      b.addEventListener('focus', () => hovered = i); b.addEventListener('blur', () => hovered = -1);
-      b.addEventListener('click', () => openNote(i));
-      nodesHost.appendChild(b);
-      nodes[pi] = { el: b, px: Math.min(Math.max(x, 7), 93), py: Math.min(Math.max(y, 10), 88), ph: r() * 6.28, sp: .6 + r() * .6, x: 0, y: 0 };
-    });
-    const rs = rnd(99);
-    stars = Array.from({ length: 70 }, () => ({ x: rs(), y: rs(), a: .08 + rs() * .22, s: .6 + rs() * 1.2 }));
-    fitSky();
-  } else {
-    sky.className = 'rv in relative mt-6 rounded-3xl bg-ink text-paper overflow-hidden p-5 space-y-6';
-    cv.style.display = 'none'; nodes = [];
-    nodesHost.className = 'contents';
-    TEAMS.forEach(t => {
-      const g = document.createElement('div');
-      g.className = 'node transition-opacity duration-500'; g.dataset.team = t;
-      g.innerHTML = `<p class="text-[11px] uppercase tracking-[.2em] text-paper/50 mb-3">${esc(t)}</p><div class="flex flex-wrap gap-2.5"></div>`;
-      const wrap = g.lastElementChild;
-      PEOPLE.forEach((p, i) => {
-        if (p.team !== t) return;
-        const b = document.createElement('button');
-        b.className = 'pill border-paper/20 font-serif italic text-base hover:border-paper focus-visible:border-paper';
-        b.innerHTML = `${icon('mail', 'w-4 h-4 text-accent not-italic')} ${esc(p.name)}`;
-        b.addEventListener('click', () => openNote(i));
-        wrap.appendChild(b);
-      });
-      nodesHost.appendChild(g);
-    });
-  }
-  applyTeam();
-}
-
-/* team filter chips: dim everyone outside the chosen team */
-let activeTeam = '';
-$('teams').innerHTML = [''].concat(TEAMS).map(t => `<button data-team="${esc(t)}" class="pill border-ink/15 hover:border-ink">${esc(t || 'Everyone')}</button>`).join('');
-function applyTeam() {
-  document.querySelectorAll('#teams button').forEach(b => {
-    const on = b.dataset.team === activeTeam;
-    b.classList.toggle('bg-ink', on); b.classList.toggle('text-paper', on); b.classList.toggle('border-ink', on);
-  });
-  document.querySelectorAll('#sky .node').forEach(el => el.classList.toggle('opacity-25', !!activeTeam && el.dataset.team !== activeTeam));
-}
-$('teams').addEventListener('click', (e) => {
-  const b = e.target.closest('button'); if (!b) return;
-  activeTeam = b.dataset.team === activeTeam ? '' : b.dataset.team;
-  applyTeam();
-});
-function fitSky() {
-  const d = Math.min(devicePixelRatio, 1.5), w = sky.clientWidth, h = sky.clientHeight;
-  cv.width = w * d; cv.height = h * d; ctx.setTransform(d, 0, 0, d, 0, 0);
-}
-function drawSky(t) {
-  requestAnimationFrame(drawSky);
-  if (!wide || !skyRunning) return;
-  const w = sky.clientWidth, h = sky.clientHeight;
-  ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = 'rgb(245 241 232)';
-  for (const s of stars) { ctx.globalAlpha = s.a; ctx.beginPath(); ctx.arc(s.x * w, s.y * h, s.s, 0, 7); ctx.fill(); }
-  ctx.globalAlpha = 1;
-  const k = reduced ? 0 : 1;
-  for (const n of nodes) {
-    n.x = n.px / 100 * w + Math.sin(t * .0004 * n.sp + n.ph) * 7 * k;
-    n.y = n.py / 100 * h + Math.cos(t * .0005 * n.sp + n.ph) * 6 * k;
-    n.el.style.transform = `translate(${n.x}px, ${n.y}px) translate(-50%, -50%)`;
-  }
-  // beacon: until someone opens a note, one name at a time gets a slow expanding ring that says "this one opens"
-  if (!everOpened && nodes.length) {
-    const period = 2600, idx = Math.floor(t / period) % nodes.length, ph = (t % period) / period, n = nodes[idx];
-    ctx.strokeStyle = `rgb(201 106 69 / ${(1 - ph) * .9})`; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.arc(n.x, n.y, 6 + ph * 30, 0, 7); ctx.stroke();
-  }
-  const reach = Math.min(w, h) * .34;
-  ctx.lineWidth = 1;
-  for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
-    const a = nodes[i], b = nodes[j], d = Math.hypot(a.x - b.x, a.y - b.y);
-    if (d > reach) continue;
-    const hot = hovered === i || hovered === j, al = (1 - d / reach) * (hot ? .9 : .28);
-    ctx.strokeStyle = hot ? `rgb(201 106 69 / ${al})` : `rgb(245 241 232 / ${al})`;
-    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-  }
-}
-buildNodes();
-requestAnimationFrame(drawSky);
-let rsz = 0;
-addEventListener('resize', () => { clearTimeout(rsz); rsz = setTimeout(() => { const w = matchMedia('(min-width: 640px)').matches; if (w !== wide) buildNodes(); else if (wide) fitSky(); }, 120); });
+/* ---------- the people: an index, one row per team, names set large; hover shows the nickname ---------- */
+$('index').innerHTML = TEAMS.map((t, ti) => {
+  const members = PEOPLE.map((p, i) => ({ p, i })).filter(x => x.p.team === t);
+  return `
+  <div class="rv group/row grid grid-cols-1 sm:grid-cols-12 gap-x-8 gap-y-3 py-8 sm:py-10 border-b border-ink/15" style="--d:${Math.min(ti, 4) * 80}ms">
+    <div class="sm:col-span-3 flex sm:flex-col justify-between sm:justify-start gap-2">
+      <p class="text-[11px] uppercase tracking-[.22em] text-accent">${esc(t)}</p>
+      <p class="text-[11px] uppercase tracking-[.22em] text-muted">${members.length} ${members.length === 1 ? 'note' : 'notes'}</p>
+    </div>
+    <div class="sm:col-span-9 font-serif text-2xl sm:text-[2.6rem] leading-[1.25] sm:leading-[1.3] -mt-1">
+      ${members.map(({ p, i }) => `<button data-i="${i}" class="group/n relative inline-block text-left mr-[.45em] mb-1 align-baseline transition-colors duration-300 group-hover/row:text-ink/30 hover:!text-accent focus-visible:!text-accent focus:outline-none">
+          <span class="absolute left-0 -top-4 whitespace-nowrap font-sans text-[10px] uppercase tracking-[.18em] text-accent opacity-0 translate-y-1 transition-all duration-300 group-hover/n:opacity-100 group-hover/n:translate-y-0 group-focus-visible/n:opacity-100">${esc(p.title || '')}</span>
+          <span class="underline decoration-1 decoration-transparent underline-offset-8 transition-colors duration-300 group-hover/n:decoration-accent">${esc(p.name)}</span><span class="text-ink/30 group-hover/n:text-ink/30">,</span>
+        </button>`).join('')}
+    </div>
+  </div>`;
+}).join('');
+$('index').addEventListener('click', (e) => { const b = e.target.closest('button[data-i]'); if (b) openNote(+b.dataset.i); });
+document.querySelectorAll('#index .rv').forEach(el => io.observe(el));
 
 /* ---------- note drawer ---------- */
 let cur = 0, lastFocus = null, drawerOpen = false, everOpened = false;
 const drawer = $('drawer'), panel = $('drawer-panel'), bg = $('drawer-bg');
-$('sky-hint-text').textContent = 'Tap a name — I wrote a note for each of you';
 $('people-count').textContent = `${PEOPLE.length} notes`;
 $('read-all').onclick = () => openNote(0);
 function renderNote() {
@@ -570,7 +467,6 @@ function renderNote() {
 function openNote(i) {
   cur = i; lastFocus = document.activeElement; renderNote();
   drawerOpen = true; everOpened = true;
-  $('sky-hint').classList.add('opacity-0');
   drawer.classList.remove('pointer-events-none');
   bg.classList.replace('opacity-0', 'opacity-100');
   panel.classList.remove('translate-x-full');
