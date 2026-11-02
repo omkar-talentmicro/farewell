@@ -277,14 +277,22 @@ const PEOPLE = [
   { team: 'Leadership', name: 'Shweta Mam', title: 'The Guiding Force', message: `Dear Shweta Mam, your constant smile, positive energy, and ability to suggest better ways of approaching things make every interaction meaningful. Our conversations have always felt like opportunities to learn something new and think about career growth from a different perspective. Thank you for your valuable guidance and encouragement!` },
   { team: 'Leadership', name: 'Janardhana Hosur Sir', title: 'The Visionary Architect', message: `Dear Janardhana Sir, your vision as a system architect, forward-thinking mindset, and ability to motivate people to look beyond the obvious are truly inspiring. Your advice and perspectives have given me valuable insights into technology, problem-solving, and professional growth. Thank you for building not just systems, but also inspiring people to think bigger!` }
 ];
-/* the org tree: root at the top, one branch per lead (or pair of leads), each branch covering one or more teams */
+/* the org tree: root at the top; each branch has one or two leads, and each lead lists their own people (in order).
+   `direct` people hang straight off the root. Names must match PEOPLE exactly. */
 const TREE = {
   root: 'Janardhana Hosur Sir',
+  direct: ['Karthik'],
   branches: [
-    { label: 'Frontend',                leads: ['Sampat Sir'],         teams: ['Frontend'] },
-    { label: 'Backend & DevOps',        leads: ['Arun', 'Gunasheel'],  teams: ['Backend', 'DevOps'] },
-    { label: 'Delivery',                leads: ['Deepak', 'Aayush'],   teams: ['Delivery'] },
-    { label: 'International & Support', leads: ['Shweta Mam'],         teams: ['International', 'Support'] }
+    { label: 'Frontend', leads: [
+      { name: 'Sampat Sir', people: ['Tasmin', 'Shashikant', 'Harish', 'Nilesh', 'Tejaswini'] } ] },
+    { label: 'Backend & DevOps', leads: [
+      { name: 'Arun',      people: ['Bharat Raj', 'Meghana', 'Rahul', 'Shobith'] },
+      { name: 'Gunasheel', people: ['Aman Choudhary', 'Rakesh Singh', 'Md. Shaun', 'Ahmar'] } ] },
+    { label: 'Delivery', leads: [
+      { name: 'Deepak', people: ['Shravan', 'Shreyas', 'Nikhil Anand'] },
+      { name: 'Aayush', people: ['Azeeza', 'Umamaheshwari', 'Vinay', 'Pooja', 'Kavana', 'Tharun', 'Sushant', 'Bhuvan'] } ] },
+    { label: 'Support', leads: [
+      { name: 'Shweta Mam', people: ['Shalini Akka', 'Devaraju', 'Shireesha'] } ] }
   ]
 };
 
@@ -436,63 +444,74 @@ function typeTerminal() {
 /* ---------- the people: an org-tree constellation; the selected note shows beside it ---------- */
 const byName = (n) => PEOPLE.findIndex(p => p.name === n);
 const ROOT = byName(TREE.root);
-/* every person gets: level (0 root, 1 lead, 2 member), branch index, parent index */
+/* every person gets: level (0 root, 1 lead or direct, 2 member), branch index, parent index */
 const META = PEOPLE.map(() => null);
 META[ROOT] = { level: 0, b: -1, parent: -1 };
-TREE.branches.forEach((br, b) => {
-  br.leadIdx = br.leads.map(byName);
-  br.leadIdx.forEach(i => META[i] = { level: 1, b, parent: ROOT });
-  br.memberIdx = br.teams.flatMap(t => PEOPLE.map((p, i) => p.team === t ? i : -1).filter(i => i >= 0 && !META[i]));
-  br.memberIdx.forEach(i => META[i] = { level: 2, b, parent: -1 });
-});
-/* reading order for Previous / Next: root, then each branch's leads and members */
-const ORDER = [ROOT, ...TREE.branches.flatMap(br => [...br.leadIdx, ...br.memberIdx])].filter(i => i >= 0 && META[i]);
+const DIRECT = TREE.direct.map(byName);
+DIRECT.forEach(i => META[i] = { level: 1, b: -1, parent: ROOT, direct: true });
+TREE.branches.forEach((br, b) => br.leads.forEach(l => {
+  l.idx = byName(l.name);
+  l.peopleIdx = l.people.map(byName);
+  META[l.idx] = { level: 1, b, parent: ROOT };
+  l.peopleIdx.forEach(i => META[i] = { level: 2, b, parent: l.idx });
+}));
+const unplaced = PEOPLE.filter((p, i) => !META[i]).map(p => p.name);
+if (unplaced.length) console.warn('Not in TREE (will not appear in the sky):', unplaced.join(', '));
+/* reading order for Previous / Next: root, direct, then each lead followed by their people */
+const ORDER = [ROOT, ...DIRECT, ...TREE.branches.flatMap(br => br.leads.flatMap(l => [l.idx, ...l.peopleIdx]))];
 
 const sky = $('sky'), nodesHost = $('nodes'), cv = $('sky-cv'), ctx = cv.getContext('2d');
 let nodes = [], W = 0, H = 0, mobile = false, skyStart = 0, skyVisible = false, hovered = -1, sel = ROOT, picked = false, stars = [];
 const rnd = (seed) => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 
-/* positions in px. Wide: a top-down tree, branches side by side. Narrow: branches stacked, joined by a spine. */
+/* positions in px. Wide: a top-down tree, branches side by side, each lead's people in a block under them.
+   Narrow: branches stacked, joined to the root by a spine. */
 function layout() {
   W = sky.clientWidth; mobile = W < 720;
   const r = rnd(11), pos = [];
   if (!mobile) {
-    H = Math.round(Math.min(Math.max(innerHeight * .78, 600), 780));
-    const rowsMax = 4, cols = TREE.branches.map(br => Math.max(Math.ceil(br.memberIdx.length / rowsMax), br.leadIdx.length)), total = cols.reduce((a, c) => a + c, 0);
-    const pad = 28, colW = (W - pad * 2) / total;
-    pos[ROOT] = { x: W / 2, y: H * .1 };
+    H = Math.round(Math.min(Math.max(innerHeight * .8, 640), 800));
+    const rowsMax = 4, leadCols = (l) => Math.max(1, Math.ceil(l.peopleIdx.length / rowsMax));
+    const total = TREE.branches.reduce((a, br) => a + br.leads.reduce((s, l) => s + leadCols(l), 0), 0);
+    const pad = 28, colW = (W - pad * 2) / total, ly = H * .36, my = H * .58;
+    pos[ROOT] = { x: W / 2, y: H * .08 };
+    DIRECT.forEach((i, k) => pos[i] = { x: W / 2 + Math.min(W * .2, 230) * (k % 2 ? -1 : 1), y: H * .17 });
     let x0 = pad;
-    TREE.branches.forEach((br, b) => {
-      const bw = cols[b] * colW, cx = x0 + bw / 2, ly = H * .34;
-      br.cx = cx; br.labelY = ly - 46;
-      br.leadIdx.forEach((i, k) => pos[i] = { x: cx + (k - (br.leadIdx.length - 1) / 2) * Math.min(bw / 2, 120), y: ly });
-      const n = br.memberIdx.length, c = Math.ceil(n / rowsMax), rows = Math.ceil(n / c);
-      br.memberIdx.forEach((i, k) => {
-        const col = k % c, row = Math.floor(k / c), cw = bw / c;
-        pos[i] = { x: x0 + cw * (col + .5) + (row % 2 ? cw * .18 : -cw * .18) * (c > 1 ? 1 : 0) + (r() - .5) * 10,
-                   y: H * .56 + row * (H * .36 / Math.max(rows - 1, 1)) + (r() - .5) * 12 };
+    TREE.branches.forEach(br => {
+      const bx0 = x0;
+      br.leads.forEach(l => {
+        const c = leadCols(l), bw = c * colW, n = l.peopleIdx.length, rows = Math.ceil(n / c);
+        pos[l.idx] = { x: x0 + bw / 2, y: ly };
+        l.peopleIdx.forEach((i, k) => {
+          const col = k % c, row = Math.floor(k / c), cw = bw / c;
+          pos[i] = { x: x0 + cw * (col + .5) + (c > 1 ? (row % 2 ? cw * .16 : -cw * .16) : (row % 2 ? 14 : -14)) + (r() - .5) * 8,
+                     y: my + row * ((H * .9 - my) / Math.max(rows - 1, 1)) * (rows > 1 ? 1 : 0) + (r() - .5) * 10 };
+        });
+        x0 += bw;
       });
-      x0 += bw;
+      br.cx = (bx0 + x0) / 2; br.labelY = ly - 44;
     });
   } else {
     const cols = 3, cw = (W - 40) / cols;
     pos[ROOT] = { x: W / 2, y: 54 };
     let y = 150;
+    DIRECT.forEach(i => { pos[i] = { x: W / 2, y }; y += 84; });
+    y += 20;
     TREE.branches.forEach(br => {
       br.cx = W / 2; br.labelY = y;
-      br.leadIdx.forEach((i, k) => pos[i] = { x: W / 2 + (k - (br.leadIdx.length - 1) / 2) * Math.min(W * .34, 130), y: y + 44 });
-      br.memberIdx.forEach((i, k) => {
-        const col = k % cols, row = Math.floor(k / cols);
-        pos[i] = { x: 20 + cw * (col + .5) + (r() - .5) * 8, y: y + 128 + row * 76 + (r() - .5) * 8 };
+      y += 44;
+      br.leads.forEach(l => {
+        pos[l.idx] = { x: W / 2, y };
+        l.peopleIdx.forEach((i, k) => {
+          const col = k % cols, row = Math.floor(k / cols);
+          pos[i] = { x: 20 + cw * (col + .5) + (r() - .5) * 8, y: y + 84 + row * 72 + (r() - .5) * 8 };
+        });
+        y += 84 + Math.ceil(l.peopleIdx.length / cols) * 72 + 10;
       });
-      y += 128 + Math.ceil(br.memberIdx.length / cols) * 76 + 34;
+      y += 30;
     });
     H = y;
   }
-  /* members hang off the nearest lead of their branch */
-  TREE.branches.forEach(br => br.memberIdx.forEach(i => {
-    META[i].parent = br.leadIdx.reduce((best, l) => Math.abs(pos[l].x - pos[i].x) < Math.abs(pos[best].x - pos[i].x) ? l : best, br.leadIdx[0]);
-  }));
   return pos;
 }
 
@@ -545,7 +564,7 @@ function edge(a, b, alpha, color, width) {
   if (alpha <= .003) return;
   ctx.strokeStyle = `rgb(${color} / ${alpha})`; ctx.lineWidth = width;
   ctx.beginPath();
-  if (mobile && a.lvl === 0) {                                                      // root -> lead on phones: down the spine, then across
+  if (mobile && a.lvl === 0 && !b.direct) {                                        // root -> lead on phones: down the spine, then across
     ctx.moveTo(a.x, a.y); ctx.lineTo(14, a.y + 20); ctx.lineTo(14, b.y); ctx.lineTo(b.x, b.y);
   } else {
     const my = (a.y + b.y) / 2;
@@ -554,7 +573,7 @@ function edge(a, b, alpha, color, width) {
   ctx.stroke();
 }
 function pointOn(a, b, t) {                                                         // point along the same curve, for the travelling pulse
-  if (mobile && a.lvl === 0) {
+  if (mobile && a.lvl === 0 && !b.direct) {
     const pts = [[a.x, a.y], [14, a.y + 20], [14, b.y], [b.x, b.y]], seg = [];
     let L = 0; for (let k = 1; k < 4; k++) { const l = Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]); seg.push(l); L += l; }
     let d = t * L; for (let k = 0; k < 3; k++) { if (d <= seg[k]) { const f = d / seg[k]; return [pts[k][0] + (pts[k + 1][0] - pts[k][0]) * f, pts[k][1] + (pts[k + 1][1] - pts[k][1]) * f]; } d -= seg[k]; }
@@ -576,7 +595,7 @@ function draw(t) {
     if (!n) return;
     n.x = n.bx + Math.sin(t * .00045 * n.sp + n.ph) * 4 * k;
     n.y = n.by + Math.cos(t * .0005 * n.sp + n.ph) * 3 * k;
-    n.lvl = META[i].level;
+    n.lvl = META[i].level; n.direct = !!META[i].direct;
     n.el.style.transform = `translate(${n.x}px, ${n.y}px) translate(-50%, -50%)`;
   });
   /* branch labels */
@@ -597,8 +616,8 @@ function draw(t) {
   });
   /* lead pairs are joined to each other */
   TREE.branches.forEach(br => {
-    if (br.leadIdx.length < 2) return;
-    const [a, b] = br.leadIdx.map(i => nodes[i]);
+    if (br.leads.length < 2) return;
+    const [a, b] = br.leads.map(l => nodes[l.idx]);
     ctx.strokeStyle = `rgb(245 241 232 / ${.22 * ease((el - 420) / 700)})`; ctx.lineWidth = 1; ctx.setLineDash([3, 5]);
     ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); ctx.setLineDash([]);
   });
@@ -616,8 +635,9 @@ function draw(t) {
 function crumb(i) {
   const m = META[i], br = TREE.branches[m.b];
   if (m.level === 0) return 'Board & Leadership';
+  if (m.direct) return `With ${PEOPLE[ROOT].name}`;
   if (m.level === 1) return `Leads ${br.label}`;
-  return `${br.label} · with ${br.leads.join(' & ')}`;
+  return `${br.label} · with ${PEOPLE[m.parent].name}`;
 }
 function renderNote() {
   const p = PEOPLE[sel], src = PHOTOS[slug(p.name)], body = $('n-body');
