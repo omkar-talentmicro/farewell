@@ -101,9 +101,10 @@
         <p class="rv eyebrow">The people</p>
         <h2 id="people-title" class="rv font-serif text-4xl sm:text-6xl leading-tight mt-4 max-w-2xl" style="--d:120ms"></h2>
       </div>
-      <p id="people-sub" class="rv max-w-sm text-muted leading-relaxed" style="--d:240ms"></p>
+      <p id="people-sub" class="rv max-w-md text-muted leading-relaxed" style="--d:240ms"></p>
     </div>
-    <div id="sky" class="rv relative mt-12 rounded-3xl bg-ink text-paper overflow-hidden" style="--d:300ms">
+    <div id="teams" class="rv mt-10 flex flex-wrap gap-2" style="--d:300ms"></div>
+    <div id="sky" class="rv relative mt-6 rounded-3xl bg-ink text-paper overflow-hidden" style="--d:360ms">
       <canvas id="sky-cv" class="absolute inset-0 w-full h-full"></canvas>
       <div id="nodes" class="relative"></div>
       <div id="sky-hint" class="absolute left-5 bottom-5 flex items-center gap-3 text-sm text-paper/75 transition-opacity duration-700 pointer-events-none">
@@ -192,8 +193,8 @@ const SENDER = {
   company: 'TalentMicro Innovations',
   label: 'A farewell note',
   dates: `${fmtDate(JOINED)} — ${fmtDate(LAST_DAY)}`,
-  headline: 'Every good chapter ends with a thank you.',
-  sub: 'I walked in as an Associate Software Engineer, unsure of almost everything. I walk out with a craft, a few scars, and people I will carry for life. This page is my way of saying it properly.',
+  headline: 'A journey made special by people.',
+  sub: 'As I come to the end of this chapter, I realise that what makes a workplace memorable isn\'t just the projects we build, the code we write, or the deadlines we meet. It\'s the people we meet, the lessons we learn, the laughter we share, and the memories we create along the way.',
 
   // from the GitHub profile: 481 contributions in 2025 + 1,208 in 2026; 13 repositories contributed to
   stats: [
@@ -210,17 +211,21 @@ const SENDER = {
     { cmd: 'git push origin life/next-chapter', out: ['Everything up to date. See you on the other side.'] }
   ],
 
-  peopleTitle: 'You are the part I will miss.',
-  peopleSub: 'Every name here is a story. Find yours — there is a note waiting behind it.',
+  peopleTitle: 'A few words for everyone who made this journey special.',
+  peopleSub: 'Every person I\'ve worked with has contributed something different to my journey. Some taught me technology, some taught me patience, some challenged my thinking, and some simply made the everyday work more enjoyable. Find your name — there is a note behind it.',
 
-  letterTitle: 'Thank you, from the bottom of my heart.',
+  letterTitle: 'One last message to everyone.',
   letter: [
-    'I joined TalentMicro Innovations not knowing what to expect. I leave with so much more than experience — I leave with friends, lessons and memories I will carry for life.',
-    'To everyone who answered my questions, fixed my mistakes, shared a laugh over chai and cheered when things finally worked: you made this place feel like home.',
-    'Goodbye is too big a word. Let\'s call it "see you soon". Stay in touch, keep building great things, and never stop being the wonderful people you are.'
+    'To everyone I\'ve had the opportunity to work with, thank you for being part of this amazing journey.',
+    'We\'ve shared deadlines, production issues, deployments, challenges, learning moments, random conversations, laughter, and countless memories. There were days when we solved complicated problems together, and days when a simple conversation made everything better.',
+    'Beyond the code we wrote, the systems we built, and the projects we delivered, it\'s the people and relationships I\'ll cherish the most.',
+    'I joined this journey with a lot to learn, and I\'m leaving with experiences, confidence, friendships, and lessons that will stay with me throughout my career. Everyone has taught me something valuable, directly or indirectly, and I\'m genuinely grateful for that.',
+    'It\'s not really goodbye; it\'s just the end of one chapter and the beginning of another. Stay connected, keep growing, keep laughing, and keep building great things.',
+    'Thank you for being a part of my journey. This chapter will always remain special.'
   ],
   signoff: 'With gratitude,',
   name: 'Omkar Dandavate',
+  shortName: 'Omkar',
 
   closing: 'See you around.',
   closingSub: 'This is not the end of the story — just the end of this chapter. My inbox is always open.',
@@ -232,18 +237,53 @@ const SENDER = {
   footnote: 'Written and built by hand, with care.'
 };
 
+/* team = the group shown as a filter and in the note; title = the nickname shown on hover and above the note */
 const PEOPLE = [
-  { name: 'Aarav Sharma',  role: 'Engineering', message: 'Thank you for every late-night debug and every laugh.\nYou made the hard days lighter.' },
-  { name: 'Diya Patel',    role: 'Design',      message: 'Your eye for detail made everything we built better. I learned to see because of you.' },
-  { name: 'Rohan Mehta',   role: 'Product',     message: 'You taught me how to see the bigger picture, and to ask "why" before "how".' },
-  { name: 'Ananya Iyer',   role: 'QA',          message: 'Nothing slipped past you, and no one made testing more fun.' },
-  { name: 'Kabir Singh',   role: 'DevOps',      message: 'Thanks for keeping the lights on, always with a smile.' },
-  { name: 'Meera Nair',    role: 'HR',          message: 'You made this place feel like home from the very first day.' },
-  { name: 'Vikram Rao',    role: 'Engineering', message: 'Code reviews with you were a masterclass. Thank you for your patience.' },
-  { name: 'Sneha Kulkarni',role: 'Finance',     message: 'For every reimbursement sorted with a smile — thank you.' },
-  { name: 'Arjun Desai',   role: 'Engineering', message: 'My first pair-programming partner. I still hear your voice when I write a for-loop.' },
-  { name: 'Priya Menon',   role: 'Support',     message: 'You turned angry tickets into happy customers, and bad mornings into good ones.' }
+  // Frontend
+  { team: 'Frontend', name: 'Shashikant', title: 'The Rajasthan Connection', message: `Shashikant, it was a pleasure working alongside you! Your dedication and contribution as a frontend developer have made a difference to the team. Keep growing, keep building, and never stop chasing bigger opportunities.` },
+  { team: 'Frontend', name: 'Harish', title: 'The Growth Story', message: `Harish, from joining as an intern to becoming an experienced developer, your growth is something to be proud of. Keep that learning attitude alive, trust your skills, and continue reaching new heights.` },
+  { team: 'Frontend', name: 'Nilesh', title: 'The Rising Star', message: `Nilesh, every journey begins with a learning phase, and yours is just getting started. Keep experimenting, keep improving, and turn every challenge into an opportunity. All the best for the journey ahead!` },
+  { team: 'Frontend', name: 'Tejaswini', title: 'The Mentor', message: `Tejaswini, thank you for being such a wonderful senior and mentor throughout my frontend journey. Your guidance, support, and experience have taught me more than just technology. Truly grateful for everything!` },
+  { team: 'Frontend', name: 'Tasmin', title: 'The Fresh Perspective', message: `Tasmin, though our journey of working together has just begun, I'm glad we got the opportunity to connect. Keep bringing your experience, fresh perspectives, and energy to the team. Wishing you great success!` },
+  // Backend
+  { team: 'Backend', name: 'Bharat Raj', title: 'The BMW Enthusiast', message: `Bharat, the guy I joined with, a true chill personality and, of course, a die-hard BMW lover! From work discussions to random conversations, it's been a great journey having you around. Keep chasing your dreams, and someday I hope to see you cruising in your dream BMW!` },
+  { team: 'Backend', name: 'Aman Choudhary', title: 'The Reports Expert', message: `Aman, from joining as an intern to becoming the go-to expert for the Reports section, your growth has been truly impressive. Your dedication and ownership have made you an important part of the team. Keep raising the bar!` },
+  { team: 'Backend', name: 'Rakesh Singh', title: 'The Question Bank', message: `Rakesh, one thing I'll always remember about you is your curiosity and your never-ending doubts (which is actually a good thing!). Your willingness to ask, learn, and improve makes you a great teammate. Never lose that attitude!` },
+  { team: 'Backend', name: 'Md. Shaun', title: 'The Tech Explorer', message: `Shaun, from working on Elasticsearch to becoming part of the Billing team, it's been great watching your journey evolve. Every new responsibility brings a new opportunity. Keep exploring, building, and growing!` },
+  { team: 'Backend', name: 'Meghana', title: 'The Billing Backbone', message: `Meghana, you are truly one of the strongest pillars of the Billing team. Your dedication, ownership, and willingness to go the extra mile, even during late-night work, speak volumes about your commitment. It's been wonderful working with you. Keep shining!` },
+  { team: 'Backend', name: 'Rahul', title: 'The Little Brother', message: `Rahul, you have always been more like a little brother than just a teammate! Your capabilities, positive attitude, and amazing sense of humour make working with you so much more enjoyable. Keep that smile alive, trust your potential, and go achieve something big!` },
+  // Delivery
+  { team: 'Delivery', name: 'Shravan', title: 'The Numbers Guy', message: `Shravan, our numbers guy! Cool personality, a great sense of humour, and always precise when it comes to learning and understanding things. Keep those numbers right, that humour alive, and keep growing!` },
+  { team: 'Delivery', name: 'Tharun', title: 'The Role-Playing Rider', message: `Tharun, our Thailand client specialist, role-playing champion, and bike lover! Your personality and the energy you bring make working together so much fun. Keep riding towards bigger goals, both on the road and in your career!` },
+  { team: 'Delivery', name: 'Kavana', title: 'The Clarity Seeker', message: `Kavana, one thing I appreciate about you is that you never hesitate to ask questions and get clarity before moving forward. Your work with the Vietnam team has been great to see. Keep that curiosity alive and continue doing amazing work!` },
+  { team: 'Delivery', name: 'Shreyas', title: 'The Payroll Pillar', message: `Shreyas, carrying Payroll responsibilities on your shoulders while keeping that cool and composed attitude is something worth appreciating! Your contribution to the team matters a lot. Keep handling those responsibilities with the same confidence!` },
+  { team: 'Delivery', name: 'Pooja', title: 'The Boss Lady', message: `Pooja, our very own bossy person who always arrives with a new set of requirements! But behind all those requirements is a genuinely chill person, an amazing teammate, and someone with a fantastic sense of humour. And let's not even start with your teasing skills! It's been fun working with you. Never change!` },
+  { team: 'Delivery', name: 'Vinay', title: 'The Precision Specialist', message: `Vinay, the clarification champion who believes in getting every detail right before getting things done! Your precision, attention to detail, and approach towards work make you a dependable colleague. Keep that quality alive!` },
+  { team: 'Delivery', name: 'Bhuvan', title: 'The Thinker', message: `Bhuvan, a thinker who likes to understand things and approach them with his own perspective. It's great to see you getting started and making progress. Trust your thinking, keep experimenting, and turn those ideas into great solutions!` },
+  { team: 'Delivery', name: 'Sushant', title: 'The Hardworking Soul', message: `Sushant, your hardworking attitude and willingness to put in the effort are qualities that will take you a long way. You're just getting started, so keep learning, stay consistent, and make the most of every opportunity!` },
+  { team: 'Delivery', name: 'Azeeza', title: 'The Feasible Planner', message: `Azeeza, one of the coolest people in the Delivery team! Your ability to come up with feasible timelines while keeping things practical makes you genuinely wonderful to work with. It's been a pleasure collaborating with you!` },
+  { team: 'Delivery', name: 'Umamaheshwari', title: 'The Delivery Legend', message: `Umamaheshwari, a true legend of the Delivery team! Working with you has always been a wonderful experience, especially the way you handle requirements and timelines with such kindness and understanding. Your approach makes collaboration so much easier. Truly appreciate working with you!` },
+  { team: 'Delivery', name: 'Nikhil Anand', title: 'The Assertive Gentleman', message: `Nikhil, the cool guy from the North with an equally strong and assertive personality! Your confidence and straightforward approach bring a different energy to the team. Keep that confidence and continue making things happen!` },
+  // International Collaborations
+  { team: 'International', name: 'Karthik', title: 'The AI Inspiration', message: `Karthik, it's been an incredible journey working with you! Our work on LLMs and Resume Search was definitely one of the turning points, and collaborating on AI Reports under your mentorship has been a truly inspiring experience. I've learned a lot from your approach, vision, and technical expertise. Thank you for the guidance and inspiration!` },
+  { team: 'International', name: 'Ahmar', title: 'The Fast Learner', message: `Ahmar, joining after me but quickly becoming someone I really enjoyed collaborating with! Your ability to learn fast and take ownership was impressive. From migrating and developing the entire Payroll module to implementing dynamic solutions and server-side asynchronous jobs, it was an amazing technical journey together. Keep pushing boundaries!` },
+  // Seniors & Mentors
+  { team: 'Seniors & Mentors', name: 'Sampat Sir', title: 'THE GOAT 🐐', message: `Dear Sampat Sir, I started my professional journey under your guidance, quite literally from zero. Thank you for every effort, every opportunity, every lesson, and for bringing out the potential in me that I didn't even know I had. Whatever I have learned and achieved during this journey carries a part of your guidance. Truly grateful for everything, Sir. You will always be THE GOAT!` },
+  { team: 'Seniors & Mentors', name: 'Arun', title: 'The Mastermind', message: `Arun, your practical approach, incredible sense of humour, and calmness during production breakthroughs are something I'll always remember. No matter how complicated the situation gets, you somehow come up with a solution. Working with you has been a great experience. Keep being the mastermind who always has a way out!` },
+  { team: 'Seniors & Mentors', name: 'Gunasheel', title: 'The Problem Breaker', message: `Gunasheel, working under your guidance has been a tremendous opportunity. The dynamic nature of the work, especially the exposure and responsibilities I received in Payroll, helped me grow significantly. Most importantly, thank you for trusting my potential and capabilities and giving me opportunities to prove myself. Your confidence in me made a real difference!` },
+  { team: 'Seniors & Mentors', name: 'Deepak', title: 'The Developer\'s Compass', message: `Deepak, your humility, patience, and the way you approach every discussion with clarity and kindness are truly admirable. You have a special way of making people understand not just how to solve a problem, but the real value of being a developer. It's been a privilege working with you!` },
+  { team: 'Seniors & Mentors', name: 'Aayush', title: 'Mr. Perfect', message: `Aayush, the man who always has an update, communicates everything clearly, and gets things done with precision! Your consistency, communication, and attention to detail make you someone every team would love to work with. Keep that perfection alive!` },
+  // Support Teams
+  { team: 'Support', name: 'Shalini Akka', title: 'The Team Spirit · CRM', message: `Shalini Akka, thank you for always being such a wonderful person and bringing people together through games, team activities, and planning. Those moments made the workplace more than just a place to work. I'll genuinely miss that energy and all those fun interactions. Thank you for everything, Akka!` },
+  { team: 'Support', name: 'Devaraju', title: 'The Numbers Man · Finance', message: `Devaraju, our finance expert who always has the numbers sorted! Thank you for all the reimbursement support and, of course, those interesting conversations around salary and finances. It's been wonderful sharing those light-hearted conversations with you. Keep those numbers balanced and the good vibes going!` },
+  { team: 'Support', name: 'Shireesha', title: 'The People Connector · HR', message: `Shireesha, you were part of my journey right from onboarding, hiring discussions, and even collaborating on bringing new talent into the frontend team. Working with you felt more like a team collaboration than just interacting with HR. Thank you for the support, opportunities, and wonderful interactions throughout this journey!` },
+  // DevOps
+  { team: 'DevOps', name: 'Shobith', title: 'The Revert Specialist 😂', message: `Shobith, you're one of those special people who made even the toughest deployment and migration days feel manageable! From manual deployments to production issues, you were always there whenever something needed fixing — and when things went south, our magic word was simply "REVERT!" Your deterministic approach, always-chill attitude, and incredible gym transformation are equally memorable. It's been an absolute pleasure working with you. Stay fit, stay chill, and keep being the legend you are!` },
+  // Board Members & Leadership
+  { team: 'Leadership', name: 'Shweta Mam', title: 'The Guiding Force', message: `Dear Shweta Mam, your constant smile, positive energy, and ability to suggest better ways of approaching things make every interaction meaningful. Our conversations have always felt like opportunities to learn something new and think about career growth from a different perspective. Thank you for your valuable guidance and encouragement!` },
+  { team: 'Leadership', name: 'Janardhana Hosur Sir', title: 'The Visionary Architect', message: `Dear Janardhana Sir, your vision as a system architect, forward-thinking mindset, and ability to motivate people to look beyond the obvious are truly inspiring. Your advice and perspectives have given me valuable insights into technology, problem-solving, and professional growth. Thank you for building not just systems, but also inspiring people to think bigger!` }
 ];
+const TEAMS = [...new Set(PEOPLE.map(p => p.team))];
 
 /* filled in by build.mjs */
 const PHOTOS = /*__PHOTOS__*/{};
@@ -254,7 +294,7 @@ const PHOTOS = /*__PHOTOS__*/{};
 const $ = (id) => document.getElementById(id);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const initials = (n) => n.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
-const slug = (n) => n.toLowerCase().trim().replace(/\s+/g, '-');
+const slug = (n) => n.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '-');   // "Md. Shaun" -> md-shaun
 const icon = (name, cls = 'w-4 h-4') => `<svg class="icon ${cls}" aria-hidden="true"><use href="#i-${name}"/></svg>`;
 const esc = (t) => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -400,41 +440,71 @@ function buildNodes() {
   wide = matchMedia('(min-width: 640px)').matches;
   nodesHost.innerHTML = '';
   if (wide) {
-    sky.className = 'rv in relative mt-12 rounded-3xl bg-ink text-paper overflow-hidden h-[70vh] min-h-[520px]';
+    sky.className = 'rv in relative mt-6 rounded-3xl bg-ink text-paper overflow-hidden h-[78vh] min-h-[600px]';
     nodesHost.className = 'relative';
     cv.style.display = '';
-    const r = rnd(7), cols = Math.ceil(Math.sqrt(PEOPLE.length * 1.7)), rows = Math.ceil(PEOPLE.length / cols);
-    nodes = PEOPLE.map((p, i) => {
-      const c = i % cols, row = Math.floor(i / cols);
-      const x = ((c + .5) / cols + (r() - .5) * .6 / cols) * 100, y = ((row + .5) / rows + (r() - .5) * .6 / rows) * 100;
+    // teams sit in their own band of the sky, so the filter chips light up a region rather than scattered dots
+    const r = rnd(7), order = TEAMS.flatMap(t => PEOPLE.map((p, i) => p.team === t ? i : -1).filter(i => i >= 0));
+    const cols = Math.ceil(Math.sqrt(PEOPLE.length * 1.9)), rows = Math.ceil(PEOPLE.length / cols);
+    nodes = PEOPLE.map(() => null);
+    order.forEach((pi, k) => {
+      const p = PEOPLE[pi], c = k % cols, row = Math.floor(k / cols);
+      const x = ((c + .5) / cols + (r() - .5) * .5 / cols) * 100, y = ((row + .5) / rows + (r() - .5) * .5 / rows) * 100;
       const b = document.createElement('button');
-      b.className = 'group absolute left-0 top-0 will-change-transform cursor-pointer focus:outline-none';
+      b.className = 'node group absolute left-0 top-0 will-change-transform cursor-pointer focus:outline-none transition-opacity duration-500';
+      b.dataset.team = p.team;
       b.innerHTML = `<span class="block w-2.5 h-2.5 rounded-full bg-paper/80 group-hover:bg-accent group-focus-visible:bg-accent group-hover:scale-150 transition-all duration-300"></span>
-        <span class="absolute left-1/2 -translate-x-1/2 top-4 whitespace-nowrap font-serif italic text-[15px] text-paper/70 group-hover:text-paper transition-colors duration-300">${esc(p.name)}</span>
-        <span class="absolute left-1/2 -translate-x-1/2 top-10 whitespace-nowrap text-[10px] uppercase tracking-[.18em] text-accent opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-300">Open note</span>`;
+        <span class="absolute left-1/2 -translate-x-1/2 top-4 whitespace-nowrap font-serif italic text-sm text-paper/70 group-hover:text-paper transition-colors duration-300">${esc(p.name)}</span>
+        <span class="absolute left-1/2 -translate-x-1/2 top-[2.4rem] whitespace-nowrap text-[10px] uppercase tracking-[.16em] text-accent opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-300">${esc(p.title || 'Open note')}</span>`;
+      const i = pi;
       b.setAttribute('aria-label', `Open the note for ${p.name}`);
       b.addEventListener('mouseenter', () => hovered = i); b.addEventListener('mouseleave', () => hovered = -1);
       b.addEventListener('focus', () => hovered = i); b.addEventListener('blur', () => hovered = -1);
       b.addEventListener('click', () => openNote(i));
       nodesHost.appendChild(b);
-      return { el: b, px: Math.min(Math.max(x, 8), 92), py: Math.min(Math.max(y, 12), 86), ph: r() * 6.28, sp: .6 + r() * .6, x: 0, y: 0 };
+      nodes[pi] = { el: b, px: Math.min(Math.max(x, 7), 93), py: Math.min(Math.max(y, 10), 88), ph: r() * 6.28, sp: .6 + r() * .6, x: 0, y: 0 };
     });
     const rs = rnd(99);
     stars = Array.from({ length: 70 }, () => ({ x: rs(), y: rs(), a: .08 + rs() * .22, s: .6 + rs() * 1.2 }));
     fitSky();
   } else {
-    sky.className = 'rv in relative mt-12 rounded-3xl bg-ink text-paper overflow-hidden p-5 flex flex-wrap gap-2.5';
+    sky.className = 'rv in relative mt-6 rounded-3xl bg-ink text-paper overflow-hidden p-5 space-y-6';
     cv.style.display = 'none'; nodes = [];
     nodesHost.className = 'contents';
-    PEOPLE.forEach((p, i) => {
-      const b = document.createElement('button');
-      b.className = 'pill border-paper/20 font-serif italic text-base hover:border-paper focus-visible:border-paper';
-      b.innerHTML = `${icon('mail', 'w-4 h-4 text-accent not-italic')} ${esc(p.name)}`;
-      b.addEventListener('click', () => openNote(i));
-      nodesHost.appendChild(b);
+    TEAMS.forEach(t => {
+      const g = document.createElement('div');
+      g.className = 'node transition-opacity duration-500'; g.dataset.team = t;
+      g.innerHTML = `<p class="text-[11px] uppercase tracking-[.2em] text-paper/50 mb-3">${esc(t)}</p><div class="flex flex-wrap gap-2.5"></div>`;
+      const wrap = g.lastElementChild;
+      PEOPLE.forEach((p, i) => {
+        if (p.team !== t) return;
+        const b = document.createElement('button');
+        b.className = 'pill border-paper/20 font-serif italic text-base hover:border-paper focus-visible:border-paper';
+        b.innerHTML = `${icon('mail', 'w-4 h-4 text-accent not-italic')} ${esc(p.name)}`;
+        b.addEventListener('click', () => openNote(i));
+        wrap.appendChild(b);
+      });
+      nodesHost.appendChild(g);
     });
   }
+  applyTeam();
 }
+
+/* team filter chips: dim everyone outside the chosen team */
+let activeTeam = '';
+$('teams').innerHTML = [''].concat(TEAMS).map(t => `<button data-team="${esc(t)}" class="pill border-ink/15 hover:border-ink">${esc(t || 'Everyone')}</button>`).join('');
+function applyTeam() {
+  document.querySelectorAll('#teams button').forEach(b => {
+    const on = b.dataset.team === activeTeam;
+    b.classList.toggle('bg-ink', on); b.classList.toggle('text-paper', on); b.classList.toggle('border-ink', on);
+  });
+  document.querySelectorAll('#sky .node').forEach(el => el.classList.toggle('opacity-25', !!activeTeam && el.dataset.team !== activeTeam));
+}
+$('teams').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  activeTeam = b.dataset.team === activeTeam ? '' : b.dataset.team;
+  applyTeam();
+});
 function fitSky() {
   const d = Math.min(devicePixelRatio, 1.5), w = sky.clientWidth, h = sky.clientHeight;
   cv.width = w * d; cv.height = h * d; ctx.setTransform(d, 0, 0, d, 0, 0);
@@ -484,10 +554,10 @@ function renderNote() {
   const p = PEOPLE[cur], av = $('d-avatar'), src = PHOTOS[slug(p.name)];
   av.innerHTML = src ? `<img src="${src}" alt="" class="w-full h-full object-cover" />` : esc(initials(p.name));
   $('d-name').textContent = p.name;
-  $('d-role').textContent = p.role || '';
+  $('d-role').textContent = p.team || '';
   $('d-count').textContent = `Note ${cur + 1} of ${PEOPLE.length}`;
-  $('d-dear').textContent = `Dear ${p.name.split(/\s+/)[0]},`;
-  $('d-sign').textContent = `— ${SENDER.name}`;
+  $('d-dear').textContent = p.title || '';                 // the nickname; the note itself already greets the person
+  $('d-sign').textContent = `— ${SENDER.shortName || SENDER.name}`;
   const msg = $('d-msg');
   msg.classList.remove('in');
   msg.innerHTML = p.message.split(/\n+/).map((t, i) => `<p style="--i:${i}">${esc(t)}</p>`).join('');
